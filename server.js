@@ -1,20 +1,30 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
 
 const app = express();
+const PORT = 5000;
+
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Conectado ao MongoDB'))
-  .catch(err => console.error('Erro MongoDB:', err));
+// Rotas
+const authRoutes = require('./routes/authRoutes');
+const coletaRoutes = require('./routes/coleta');
 
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/coleta', require('./routes/coleta'));
+app.use('/api/auth', authRoutes);         // ex: /api/auth/login
+app.use('/api/coleta', coletaRoutes);    // ex: /api/coleta/historico
 
-app.get('/', (req, res) => res.send('API do Projeto de Reciclagem de Óleo'));
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
+// Conexão com MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ Conectado ao MongoDB');
+    app.listen(PORT, () => {
+      console.log(`Servidor rodando em http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Erro ao conectar ao MongoDB:', err);
+  });

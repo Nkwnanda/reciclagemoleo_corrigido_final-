@@ -1,26 +1,32 @@
 const express = require('express');
-const Coleta = require('../models/ColetaDeOleo');
-const autenticar = require('../middleware/authMiddleware');
-
 const router = express.Router();
+const Coleta = require('../models/ColetaDeOleo');
+const autenticarToken = require('../middleware/authMiddleware');
 
-router.post('/register', autenticar, async (req, res) => {
+// Registrar coleta (autenticado)
+router.post('/register', autenticarToken, async (req, res) => {
   try {
-    const nova = new Coleta({ usuario: req.user.id, quantidade: req.body.quantidade });
-    await nova.save();
-    res.status(201).json({ message: 'Coleta registrada com sucesso' });
+    const novaColeta = new Coleta({
+      usuario: req.user.id,
+      quantidade: req.body.quantidade
+    });
+
+    await novaColeta.save();
+    res.status(201).json({ message: 'Coleta registrada com sucesso!' });
   } catch (err) {
-    res.status(500).json({ message: 'Erro ao registrar coleta' });
+    res.status(500).json({ message: 'Erro ao registrar coleta', error: err.message });
   }
 });
 
-router.get('/historico', autenticar, async (req, res) => {
+// Listar histórico do usuário autenticado
+router.get('/historico', autenticarToken, async (req, res) => {
   try {
-    const historico = await Coleta.find({ usuario: req.user.id }).sort({ data: -1 });
-    res.json(historico);
+    const coleta = await Coleta.find({ usuario: req.user.id }).sort({ data: -1 });
+    res.json(coleta);
   } catch (err) {
-    res.status(500).json({ message: 'Erro ao buscar histórico' });
+    res.status(500).json({ message: 'Erro ao buscar histórico', error: err.message });
   }
 });
 
 module.exports = router;
+
