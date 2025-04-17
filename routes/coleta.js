@@ -1,37 +1,25 @@
-
 const express = require('express');
-const router = express.Router();
 const Coleta = require('../models/ColetaDeOleo');
-const autenticarToken = require('../middleware/authMiddleware');
+const autenticar = require('../middleware/authMiddleware');
 
-// Registrar coleta (autenticado)
-router.post('/register', autenticarToken, async (req, res) => {
+const router = express.Router();
+
+router.post('/register', autenticar, async (req, res) => {
   try {
-    console.log("📩 Requisição recebida para registrar coleta:");
-    console.log("Token ID:", req.user.id);
-    console.log("Quantidade:", req.body.quantidade);
-
-    const novaColeta = new Coleta({
-      usuarioId: req.user.id,
-      quantidade: req.body.quantidade
-    });
-
-    await novaColeta.save();
-    res.status(201).json({ message: 'Coleta registrada com sucesso!' });
+    const nova = new Coleta({ usuario: req.user.id, quantidade: req.body.quantidade });
+    await nova.save();
+    res.status(201).json({ message: 'Coleta registrada com sucesso' });
   } catch (err) {
-    console.error("❌ Erro ao registrar coleta:", err.message);
-    res.status(500).json({ message: 'Erro ao registrar coleta', error: err.message });
+    res.status(500).json({ message: 'Erro ao registrar coleta' });
   }
 });
 
-// Total de óleo reciclado pelo usuário autenticado
-router.get('/total', autenticarToken, async (req, res) => {
+router.get('/historico', autenticar, async (req, res) => {
   try {
-    const coletas = await Coleta.find({ usuarioId: req.user.id });
-    const total = coletas.reduce((soma, item) => soma + item.quantidade, 0);
-    res.json({ total });
+    const historico = await Coleta.find({ usuario: req.user.id }).sort({ data: -1 });
+    res.json(historico);
   } catch (err) {
-    res.status(500).json({ message: 'Erro ao calcular total', error: err.message });
+    res.status(500).json({ message: 'Erro ao buscar histórico' });
   }
 });
 
