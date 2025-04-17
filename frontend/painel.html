@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel do Usuário</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .painel {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      animation: fadeIn 0.8s ease;
+    }
+
+    h2 {
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    .total {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 0.7rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: #2ecc71;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #27ae60;
+    }
+
+    .logout {
+      margin-top: 2rem;
+      color: #999;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .historico {
+      margin-top: 2rem;
+    }
+
+    .historico-item {
+      background: #f4f4f4;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Painel do Usuário</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">Início</a></li>
+        <li><a href="educacao.html">Educação Ambiental</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <div class="painel">
+      <h2 id="nomeUsuario">Olá, usuário!</h2>
+      <p class="total">Total de óleo registrado: <span id="totalOleo">0</span> litros</p>
+
+      <form id="formOleo">
+        <input type="number" id="quantidade" placeholder="Quantidade em litros" required min="0.1" step="0.1" />
+        <button type="submit">Registrar óleo</button>
+      </form>
+
+      <div class="historico">
+        <h3>Histórico de Coleta</h3>
+        <div id="listaHistorico"></div>
+      </div>
+
+      <p class="logout" onclick="logout()">Sair da conta</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Projeto Reciclagem de Óleo</p>
+  </footer>
+
+  <script>
+   script>
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Você precisa estar logado para acessar esta página.');
+    window.location.href = 'login.html';
+  }
+
+  const backendURL = 'https://reciclagem-backend2.onrender.com';
+
+  // Carregar nome, histórico e total
+  window.onload = async () => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      document.getElementById('nomeUsuario').textContent = `Olá, ${payload.nome}`;
+
+      // Histórico
+      const resHistorico = await fetch(`${backendURL}/api/coleta/historico`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const historico = await resHistorico.json();
+
+      const lista = document.getElementById('listaHistorico');
+      lista.innerHTML = historico.map(item => `
+        <div class="historico-item">
+          ${item.quantidade} litro(s) - ${new Date(item.data).toLocaleDateString()}
+        </div>
+      `).join('');
+
+      // Total de óleo
+      const resTotal = await fetch(`${backendURL}/api/coleta/total`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const totalData = await resTotal.json();
+      document.getElementById('totalOleo').textContent = totalData.total || 0;
+
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao carregar dados do painel.');
+    }
+  };
+
+  // Registrar coleta
+  document.getElementById('formOleo').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const quantidade = document.getElementById('quantidade').value;
+
+    try {
+      const res = await fetch(`${backendURL}/api/coleta/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ quantidade })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'Coleta registrada!');
+        window.location.reload();
+      } else {
+        alert(data.message || 'Erro ao registrar.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao conectar com o servidor.');
+    }
+  });
+
+  function logout() {
+    localStorage.removeItem('token');
+    window.location.href = 'login.html';
+  }
+</script>

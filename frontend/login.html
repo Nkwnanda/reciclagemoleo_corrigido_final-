@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Reciclagem de Óleo</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    form {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      max-width: 400px;
+      margin: 40px auto;
+      animation: fadeIn 1s ease;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 0.7rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #2ecc71;
+    }
+
+    button {
+      background-color: #2ecc71;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #27ae60;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Login</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">Início</a></li>
+        <li><a href="cadastro.html">Cadastro</a></li>
+        <li><a href="educacao.html">Educação Ambiental</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <form id="formLogin">
+      <input type="email" id="email" placeholder="E-mail" required />
+      <input type="password" id="senha" placeholder="Senha" required />
+      <button type="submit">Entrar</button>
+    </form>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Projeto Reciclagem de Óleo</p>
+  </footer>
+
+  <script>
+    document.getElementById('formLogin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value.trim();
+
+      if (!email || !senha) {
+        alert('Preencha todos os campos.');
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem('token', data.token);
+          alert('Login realizado com sucesso!');
+          window.location.href = 'painel.html';
+        } else {
+          alert(data.message || 'E-mail ou senha inválidos.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao conectar com o servidor.');
+      }
+    });
+  </script>
+</body>
+</html>
