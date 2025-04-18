@@ -110,77 +110,82 @@
   </footer>
 
   <script>
-   script>
-  const token = localStorage.getItem('token');
-  if (!token) {
-    alert('Você precisa estar logado para acessar esta página.');
-    window.location.href = 'login.html';
-  }
-
-  const backendURL = 'https://reciclagem-backend2.onrender.com';
-
-  // Carregar nome, histórico e total
-  window.onload = async () => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      document.getElementById('nomeUsuario').textContent = `Olá, ${payload.nome}`;
-
-      // Histórico
-      const resHistorico = await fetch(`${backendURL}/api/coleta/historico`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const historico = await resHistorico.json();
-
-      const lista = document.getElementById('listaHistorico');
-      lista.innerHTML = historico.map(item => `
-        <div class="historico-item">
-          ${item.quantidade} litro(s) - ${new Date(item.data).toLocaleDateString()}
-        </div>
-      `).join('');
-
-      // Total de óleo
-      const resTotal = await fetch(`${backendURL}/api/coleta/total`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const totalData = await resTotal.json();
-      document.getElementById('totalOleo').textContent = totalData.total || 0;
-
-    } catch (err) {
-      console.error(err);
-      alert('Erro ao carregar dados do painel.');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Você precisa estar logado para acessar esta página.');
+      window.location.href = 'login.html';
     }
-  };
-
-  // Registrar coleta
-  document.getElementById('formOleo').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const quantidade = document.getElementById('quantidade').value;
-
-    try {
-      const res = await fetch(`${backendURL}/api/coleta/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ quantidade })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message || 'Coleta registrada!');
-        window.location.reload();
-      } else {
-        alert(data.message || 'Erro ao registrar.');
+  
+    const backendURL = 'https://reciclagem-backend2.onrender.com';
+  
+    async function carregarDashboard() {
+      try {
+        const resDashboard = await fetch(`${backendURL}/api/coleta/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+  
+        const dashboard = await resDashboard.json();
+  
+        // Atualiza nome e total
+        document.getElementById('nomeUsuario').textContent = `Olá, ${dashboard.nome}!`;
+        document.getElementById('totalOleo').textContent = dashboard.totalOleo.toFixed(2);
+  
+        // Carrega histórico
+        const resHistorico = await fetch(`${backendURL}/api/coleta/historico`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const historico = await resHistorico.json();
+  
+        const lista = document.getElementById('listaHistorico');
+        lista.innerHTML = historico.map(item => `
+          <div class="historico-item">
+            ${item.quantidade} litro(s) - ${new Date(item.data).toLocaleDateString()}
+          </div>
+        `).join('');
+  
+      } catch (err) {
+        console.error('Erro ao carregar dashboard:', err);
+        alert('Erro ao carregar dados do painel.');
       }
-    } catch (error) {
-      console.error(error);
-      alert('Erro ao conectar com o servidor.');
     }
-  });
-
-  function logout() {
-    localStorage.removeItem('token');
-    window.location.href = 'login.html';
-  }
-</script>
+  
+    // Envia nova coleta
+    document.getElementById('formOleo').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const quantidade = document.getElementById('quantidade').value;
+  
+      try {
+        const res = await fetch(`${backendURL}/api/coleta/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ quantidade })
+        });
+  
+        const data = await res.json();
+        if (res.ok) {
+          alert(data.message || 'Coleta registrada!');
+          await carregarDashboard(); // recarrega dados sem dar reload
+          document.getElementById('formOleo').reset();
+        } else {
+          alert(data.message || 'Erro ao registrar.');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao conectar com o servidor.');
+      }
+    });
+  
+    function logout() {
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    }
+  
+    // Carrega tudo ao entrar na página
+    window.onload = carregarDashboard;
+  </script>
+  
